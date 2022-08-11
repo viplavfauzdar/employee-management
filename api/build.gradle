@@ -1,0 +1,78 @@
+plugins {
+	id 'org.springframework.boot' version '2.6.5'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	//id 'jacoco'
+}
+
+group = 'com.viplav'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+	cucumberRuntime {
+		extendsFrom testImplementation
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'junit:junit:4.13.2'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	implementation 'com.h2database:h2'
+	runtimeOnly 'mysql:mysql-connector-java'
+	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation group: 'io.cucumber', name: 'cucumber-java', version: '7.3.4'
+	testImplementation group: 'io.cucumber', name: 'cucumber-junit', version: '7.3.4'
+	testImplementation group: 'io.cucumber', name: 'cucumber-spring', version: '7.3.4'
+	testImplementation group: 'net.masterthought', name: 'cucumber-reporting', version: '5.7.2'
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-data-rest', version: '1.6.8'
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.8'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+task cucumber() {
+	dependsOn assemble, testClasses
+	doLast {
+		javaexec {
+			mainClass = "io.cucumber.core.cli.Main"
+			classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+			args = ['--plugin', 'pretty',
+					'--plugin', 'html:build/cucumber-reports/Cucumber.html',
+					'--plugin', 'json:build/cucumber-reports/Cucumber.json',
+					'--plugin', 'junit:build/cucumber-reports/Cucumber.xml',
+					'--glue', 'com.viplav.empmngt', 'src/test/resources']
+		}
+	}
+}
+
+apply plugin: 'jacoco'
+
+jacoco {
+	toolVersion = "0.8.8"
+}
+
+jacocoTestReport {
+	reports {
+		xml.enabled true
+		html.enabled true
+		csv.enabled  true
+	}
+}
+
+build.dependsOn cucumber, jacocoTestReport
